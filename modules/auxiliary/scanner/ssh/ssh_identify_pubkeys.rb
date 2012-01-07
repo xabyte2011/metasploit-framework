@@ -1,8 +1,4 @@
 ##
-# $Id$
-##
-
-##
 # This file is part of the Metasploit Framework and may be subject to
 # redistribution and commercial restrictions. Please see the Metasploit
 # Framework web site for more information on licensing and terms of use.
@@ -21,7 +17,6 @@ class Metasploit3 < Msf::Auxiliary
 	def initialize
 		super(
 			'Name'        => 'SSH Public Key Acceptance Scanner',
-			'Version'     => '$Revision$',
 			'Description' => %q{
 				This module can determine what public keys are configured for
 				key-based authentication across a range of machines, users, and
@@ -189,7 +184,7 @@ class Metasploit3 < Msf::Auxiliary
 		cleartext_keys.each_with_index do |key_data,key_idx|
 			key_info  = ""
 			
-			if key_data =~ /ssh\-(rsa|dsa)\s+([^\s]+)\s+(.*)/
+			if key_data =~ /ssh\-(rsa|dsa|dss)\s+([^\s]+)\s+(.*)/
 				key_info = "- #{$3.strip}"
 			end
 			
@@ -252,16 +247,44 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 	def do_report(ip, port, user, key)
-		report_note(
-			:host     => ip, 
-			:type     => 'ssh.authorized_key', 
-			:port     => port, 
-			:protocol => 'tcp', 
-			:data     => {:username => user, :fingerprint => key[:fingerprint] },
-			:insert   => :unique_data
+		this_cred = report_auth_info(
+			:host => ip,
+			:port => rport,
+			:sname => 'ssh',
+			:user => user,
+			:pass => key[:fingerprint],
+			:source_type => "user_supplied",
+			:type => 'ssh_pubkey',
+			:active => true,
+			:duplicate_ok => true
 		)
+		# Check to see if we already know this private key
+		cross_check_keys(this_cred,key)
+	end
+
+	def cross_check_keys(this_cred,key)
+		actually_check = false
+		if this_cred
+			if this_cred.proof.blank?
+				actually_check = true
+			else
+				if this_cred.proof =~ /CRED=(\d+)/
+					other_cred_id = $1
+					other_creds = framework.db.creds.select {|c| c.id == other_cred_id.to_i}
+					actually_check = !other_creds.empty? 
+				end
+			end
+		end
+		if actually_check
+			framework.db.creds.each do |other_cred|
+				next unless other_cred.ptype == "ssh_pubkey"
+				if other_cred.proof =~ /KEY=#{key[:fingerprint]}/
+					this_cred.proof = "CRED=#{other_cred.id}"
+					this.cred.save
+				end
+			end
+		end
 	end		
-		
 
 	def run_host(ip) 
 		# Since SSH collects keys and tries them all on one authentication session, it doesn't

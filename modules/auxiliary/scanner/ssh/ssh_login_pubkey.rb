@@ -178,6 +178,7 @@ class Metasploit3 < Msf::Auxiliary
 				:msfmodule    => self,
 				:port         => port,
 				:key_data     => key_data,
+				:disable_agent => true,
 				:record_auth_info => true
 			}
 			opt_hash.merge!(:verbose => :debug) if datastore['SSH_DEBUG']
@@ -248,7 +249,7 @@ class Metasploit3 < Msf::Auxiliary
 
 	def do_report(ip,user,port,proof)
 		store_keyfile_b64_loot(ip,user,self.good_key)
-		report_auth_info(
+		cred_hash = {
 			:host => ip,
 			:port => datastore['RPORT'],
 			:sname => 'ssh',
@@ -257,7 +258,17 @@ class Metasploit3 < Msf::Auxiliary
 			:type => "ssh_key",
 			:proof => "KEY=#{self.good_key}, PROOF=#{proof}",
 			:active => true
-		)
+		}
+		this_cred = report_auth_info(cred_hash)
+
+		# Report the pubkey info as well. It means double-accounting,
+		# but makes life easier for other ssh key activities
+		if this_cred
+			cred_hash[:type] = "ssh_pubkey"
+			cred_hash[:pass] = self.good_key
+			cred_hash[:proof] = "CRED=#{cred_hash.id}" 
+			report_auth_info(cred_hash)
+		end
 	end
 
 	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's

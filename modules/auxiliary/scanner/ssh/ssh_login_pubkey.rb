@@ -260,15 +260,7 @@ class Metasploit3 < Msf::Auxiliary
 			:active => true
 		}
 		this_cred = report_auth_info(cred_hash)
-
-		# Report the pubkey info as well. It means double-accounting,
-		# but makes life easier for other ssh key activities
-		if this_cred
-			cred_hash[:type] = "ssh_pubkey"
-			cred_hash[:pass] = self.good_key
-			cred_hash[:proof] = "CRED=#{this_cred.id}" 
-			report_auth_info(cred_hash)
-		end
+		# TODO: Crosscheck against pubkeys!
 	end
 
 	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's

@@ -241,50 +241,49 @@ class Metasploit3 < Msf::Auxiliary
 			
 			accepted.each do |key|
 				print_good "#{ip}:#{rport} SSH - Accepted: '#{user}' with key '#{key[:fingerprint]}' #{key_info}"
-				do_report(ip, rport, user, key)
+				do_report(ip, rport, user, key, key_data)
 			end
 		end
 	end
 
-	def do_report(ip, port, user, key)
+	def do_report(ip, port, user, key, key_data)
+		store_keyfile_b64_loot(ip,user,key[:fingerprint])
 		this_cred = report_auth_info(
 			:host => ip,
 			:port => rport,
 			:sname => 'ssh',
 			:user => user,
-			:pass => key[:fingerprint],
+			:pass => @keyfile_path,
 			:source_type => "user_supplied",
 			:type => 'ssh_pubkey',
-			:active => true,
-			:duplicate_ok => true
+			:proof => "KEY=#{key[:fingerprint]}",
+			:active => true
 		)
-		# Check to see if we already know this public key's private key
-		cross_check_keys(this_cred,key)
+		# TODO: Cross-check against privkeys!
 	end
 
-	def cross_check_keys(this_cred,key)
-		actually_check = false
-		if this_cred
-			if this_cred.proof.blank?
-				actually_check = true
-			else
-				if this_cred.proof =~ /CRED=(\d+)/
-					other_cred_id = $1
-					other_creds = framework.db.creds.select {|c| c.id == other_cred_id.to_i}
-					actually_check = !other_creds.empty? 
-				end
+	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's
+	# good, then store it as loot for this user@host, unless we
+	# already have it in loot.
+	def store_keyfile_b64_loot(ip,user,key_id)
+		return unless db
+		return if @keyfile_path
+		return if datastore["SSH_KEYFILE_B64"].to_s.empty?
+		keyfile = datastore["SSH_KEYFILE_B64"].unpack("m*").first
+		keyfile = keyfile.strip + "\n"
+		ktype_match = keyfile.match(/ssh-(rsa|dss)/)
+		return unless ktype_match
+		ktype = ktype_match[1].downcase
+		ktype = "dsa" if ktype == "dss" # Seems sensible to recast it
+		ltype = "host.unix.ssh.#{user}_#{ktype}_public"
+		# Assignment and comparison here, watch out!
+		if loot = Msf::DBManager::Loot.find_by_ltype_and_workspace_id(ltype,myworkspace.id)
+			if loot.info.include? key_id
+				@keyfile_path = loot.path
 			end
 		end
-		if actually_check
-			framework.db.creds.each do |other_cred|
-				next unless other_cred.ptype == "ssh_pubkey"
-				if other_cred.proof =~ /KEY=#{key[:fingerprint]}/
-					this_cred.proof = "CRED=#{other_cred.id}"
-					this_cred.save
-				end
-			end
-		end
-	end		
+		@keyfile_path ||= store_loot(ltype, "application/octet-stream", ip, keyfile.strip, nil, key_id)
+	end
 
 	def run_host(ip) 
 		# Since SSH collects keys and tries them all on one authentication session, it doesn't

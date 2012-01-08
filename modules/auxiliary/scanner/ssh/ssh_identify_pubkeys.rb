@@ -7,6 +7,7 @@
 
 require 'msf/core'
 require 'net/ssh'
+require 'sshkey' # TODO: Actually include this!
 
 class Metasploit3 < Msf::Auxiliary
 
@@ -96,7 +97,6 @@ class Metasploit3 < Msf::Auxiliary
 				keys << line
 				next
 			end
-		
 			in_key = true if(line =~ /^-----BEGIN [RD]SA (PRIVATE|PUBLIC) KEY-----/)
 			this_key << line if in_key
 			if(line =~ /^-----END [RD]SA (PRIVATE|PUBLIC) KEY-----/)
@@ -111,13 +111,17 @@ class Metasploit3 < Msf::Auxiliary
 		return validate_keys(keys)
 	end
 
-	# Validates that the key isn't total garbage. Also throws out SSH2 keys --
-	# can't use 'em for Net::SSH.
+	# Validates that the key isn't total garbage, and converts PEM formatted
+	# keys to SSH formatted keys.
 	def validate_keys(keys)
 		keepers = []
 		keys.each do |key|
 			if key =~ /ssh-(dss|rsa)/
 				keepers << key
+				next
+			else # Use the mighty SSHKey library from James Miller to convert them on the fly.
+				ssh_version = SSHKey.new(key).ssh_public_key rescue nil
+				keepers << ssh_version if ssh_version
 				next
 			end
 			

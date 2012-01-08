@@ -266,7 +266,7 @@ class Metasploit3 < Msf::Auxiliary
 		if this_cred
 			cred_hash[:type] = "ssh_pubkey"
 			cred_hash[:pass] = self.good_key
-			cred_hash[:proof] = "CRED=#{cred_hash.id}" 
+			cred_hash[:proof] = "CRED=#{this_cred.id}" 
 			report_auth_info(cred_hash)
 		end
 	end

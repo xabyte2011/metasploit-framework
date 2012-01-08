@@ -184,7 +184,7 @@ class Metasploit3 < Msf::Auxiliary
 		cleartext_keys.each_with_index do |key_data,key_idx|
 			key_info  = ""
 			
-			if key_data =~ /ssh\-(rsa|dsa|dss)\s+([^\s]+)\s+(.*)/
+			if key_data =~ /ssh\-(rsa|dss)\s+([^\s]+)\s+(.*)/
 				key_info = "- #{$3.strip}"
 			end
 			
@@ -258,7 +258,7 @@ class Metasploit3 < Msf::Auxiliary
 			:active => true,
 			:duplicate_ok => true
 		)
-		# Check to see if we already know this private key
+		# Check to see if we already know this public key's private key
 		cross_check_keys(this_cred,key)
 	end
 
@@ -280,7 +280,7 @@ class Metasploit3 < Msf::Auxiliary
 				next unless other_cred.ptype == "ssh_pubkey"
 				if other_cred.proof =~ /KEY=#{key[:fingerprint]}/
 					this_cred.proof = "CRED=#{other_cred.id}"
-					this.cred.save
+					this_cred.save
 				end
 			end
 		end

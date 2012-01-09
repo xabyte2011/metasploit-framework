@@ -261,16 +261,6 @@ class Metasploit3 < Msf::Auxiliary
 			:active => true
 		}
 		this_cred = report_auth_info(cred_hash)
-		cross_check_pubkeys(this_cred)
-	end
-
-	# Checks if any existing pubkeys match the named key's
-	# key id. If so, assign that other key's cred.id to this
-	# one's proof section. If not, create the pubkey, store
-	# it, and assign that. This should always result in a
-	# match, since all privkeys can have their pubkeys derived.
-	def cross_check_pubkeys(this_cred)
-
 	end
 
 	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's

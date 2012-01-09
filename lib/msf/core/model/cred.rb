@@ -19,6 +19,12 @@ class Cred < ActiveRecord::Base
 		my_key_id == other_key_id
 	end
 
+	def key_id
+		return nil unless self.ptype =~ /^ssh_/
+		return nil unless self.proof =~ /([0-9a-fA-F:]{47})/
+		$1.downcase
+	end
+
 end
 
 end

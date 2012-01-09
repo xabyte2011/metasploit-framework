@@ -251,8 +251,10 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 	def do_report(ip, port, user, key, key_data)
+		return unless framework.db.active
+		matching_key = cross_check_privkeys(key[:fingerprint])
 		store_keyfile_b64_loot(ip,user,key[:fingerprint])
-		this_cred = report_auth_info(
+		cred_hash = {
 			:host => ip,
 			:port => rport,
 			:sname => 'ssh',
@@ -261,9 +263,42 @@ class Metasploit3 < Msf::Auxiliary
 			:source_type => "user_supplied",
 			:type => 'ssh_pubkey',
 			:proof => "KEY=#{key[:fingerprint]}",
+			:duplicate_ok => true,
 			:active => true
-		)
-		# TODO: Cross-check against privkeys!
+		}
+		if matching_key
+			cred_hash[:proof] << ", CRED=#{matching_key.id}"
+		end
+		this_cred = report_auth_info(cred_hash)
+
+=begin
+# This needs a tad more testing.
+		framework.db.sync
+		if matching_key
+			if matching_key.proof =~ /\sCRED=/
+				matching_key.proof = matching_key.proof.gsub(/CRED=\d+/,"CRED=#{this_cred.id}")
+			else
+				matching_key.proof = matching_key.proof.gsub(/^/,"CRED=#{this_cred.id}, ")
+			end
+			print_debug matching_key.proof
+			matching_key.save if matching_key.changed?
+		end
+=end
+	end
+
+	# Checks if any existing privkeys matches the named key's
+	# key id. If so, assign that other key's cred.id to this
+	# one's proof section, and vice-versa.
+	def cross_check_privkeys(key_id)
+		return unless framework.db.active
+		other_cred = nil
+		framework.db.creds.each do |cred|
+			next unless cred.ptype == "ssh_key"
+			next unless cred.proof =~ /#{key_id}/
+				other_cred = cred
+			break
+		end
+		return other_cred
 	end
 
 	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's

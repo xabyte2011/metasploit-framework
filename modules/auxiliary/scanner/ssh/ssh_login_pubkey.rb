@@ -248,6 +248,7 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 	def do_report(ip,user,port,proof)
+		return unless framework.db.active
 		store_keyfile_b64_loot(ip,user,self.good_key)
 		cred_hash = {
 			:host => ip,
@@ -260,7 +261,16 @@ class Metasploit3 < Msf::Auxiliary
 			:active => true
 		}
 		this_cred = report_auth_info(cred_hash)
-		# TODO: Crosscheck against pubkeys!
+		cross_check_pubkeys(this_cred)
+	end
+
+	# Checks if any existing pubkeys match the named key's
+	# key id. If so, assign that other key's cred.id to this
+	# one's proof section. If not, create the pubkey, store
+	# it, and assign that. This should always result in a
+	# match, since all privkeys can have their pubkeys derived.
+	def cross_check_pubkeys(this_cred)
+
 	end
 
 	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's

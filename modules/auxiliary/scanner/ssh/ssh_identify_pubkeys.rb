@@ -212,14 +212,14 @@ class Metasploit3 < Msf::Auxiliary
 				if datastore['SSH_BYPASS']
 					data = nil
 					
-					print_status("#{ip}:#{rport} - SSH - User #{user} is being tested for authentication bypass...")
+					print_status("#{ip}:#{rport} SSH - User #{user} is being tested for authentication bypass...")
 					
 					begin
 						::Timeout.timeout(5) { data = ssh_socket.exec!("help\nid\nuname -a").to_s }
 					rescue ::Exception
 					end
 					
-					print_good("#{ip}:#{rport} - SSH - User #{user} successfully bypassed authentication: #{data.inspect} ") if data
+					print_brute(:level => :good, :msg => "User #{user} successfully bypassed authentication: #{data.inspect} ") if data
 				end
 				
 				::Timeout.timeout(1) { ssh_socket.close } rescue nil
@@ -235,14 +235,14 @@ class Metasploit3 < Msf::Auxiliary
 			
 			if accepted.length == 0
 				if @key_files
-					vprint_error "#{ip}:#{rport} - SSH - User #{user} does not accept key #{@key_files[key_idx+1]} #{key_info}"
+					print_brute :level => :verror, :msg =>  "User #{user} does not accept key #{@key_files[key_idx+1]} #{key_info}"
 				else
-					vprint_error "#{ip}:#{rport} - SSH - User #{user} does not accept key #{key_idx+1} #{key_info}"
+					print_brute :level => :verror, :msg => "User #{user} does not accept key #{key_idx+1} #{key_info}"
 				end
 			end
 			
 			accepted.each do |key|
-				print_good "#{ip}:#{rport} SSH - Accepted: '#{user}' with key '#{key[:fingerprint]}' #{key_info}"
+				print_brute :level => :good, :msg => "Accepted: '#{user}' with key '#{key[:fingerprint]}' #{key_info}"
 				do_report(ip, rport, user, key, key_data)
 			end
 		end
@@ -297,17 +297,17 @@ class Metasploit3 < Msf::Auxiliary
 			ret, proof = do_login(ip, rport, user)
 			case ret
 			when :connection_error
-				vprint_error "#{ip}:#{rport} - SSH - Could not connect"
+				vprint_error "#{ip}:#{rport} SSH - Could not connect"
 				:abort
 			when :connection_disconnect
-				vprint_error "#{ip}:#{rport} - SSH - Connection timed out"
+				vprint_error "#{ip}:#{rport} SSH - Connection timed out"
 				:abort
 			when :fail
-				vprint_error "#{ip}:#{rport} - SSH - Failed: '#{user}'"
+				vprint_error "#{ip}:#{rport} SSH - Failed: '#{user}'"
 			when :missing_keyfile
-				vprint_error "#{ip}:#{rport} - SSH - Cannot read keyfile"
+				vprint_error "#{ip}:#{rport} SSH - Cannot read keyfile"
 			when :no_valid_keys
-				vprint_error "#{ip}:#{rport} - SSH - No readable keys in keyfile"
+				vprint_error "#{ip}:#{rport} SSH - No readable keys in keyfile"
 			end
 		end
 	end

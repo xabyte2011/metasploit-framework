@@ -193,9 +193,9 @@ class Metasploit3 < Msf::Auxiliary
 			rescue Net::SSH::AuthenticationFailed
 				# Try, try, again
 				if @key_files
-					vprint_error "#{ip}:#{rport} - SSH - Failed authentication, trying key #{@key_files[key_idx+1]}"
+					vprint_error "#{ip}:#{rport} SSH - Failed authentication, trying key #{@key_files[key_idx+1]}"
 				else
-					vprint_error "#{ip}:#{rport} - SSH - Failed authentication, trying key #{key_idx+1}"
+					vprint_error "#{ip}:#{rport} SSH - Failed authentication, trying key #{key_idx+1}"
 				end
 				next
 			rescue Net::SSH::Exception => e
@@ -301,21 +301,21 @@ class Metasploit3 < Msf::Auxiliary
 			ret,proof = do_login(ip,user,rport)
 			case ret
 			when :success
-				print_good "#{ip}:#{rport} SSH - Success: '#{user}':'#{self.good_key}' '#{proof.to_s.gsub(/[\r\n\e\b\a]/, ' ')}'"
+				print_brute :level => :good, :msg => "Success: '#{user}':'#{self.good_key}' '#{proof.to_s.gsub(/[\r\n\e\b\a]/, ' ')}'"
 				do_report(ip, rport, user, proof)
 				:next_user
 			when :connection_error
-				vprint_error "#{ip}:#{rport} - SSH - Could not connect"
+				vprint_error "#{ip}:#{rport} SSH - Could not connect"
 				:abort
 			when :connection_disconnect
-				vprint_error "#{ip}:#{rport} - SSH - Connection timed out"
+				vprint_error "#{ip}:#{rport} SSH - Connection timed out"
 				:abort
 			when :fail
-				vprint_error "#{ip}:#{rport} - SSH - Failed: '#{user}'"
+				vprint_error "#{ip}:#{rport} SSH - Failed: '#{user}'"
 			when :missing_keyfile
-				vprint_error "#{ip}:#{rport} - SSH - Cannot read keyfile."
+				vprint_error "#{ip}:#{rport} SSH - Cannot read keyfile."
 			when :no_valid_keys
-				vprint_error "#{ip}:#{rport} - SSH - No cleartext keys in keyfile."
+				vprint_error "#{ip}:#{rport} SSH - No cleartext keys in keyfile."
 			end
 		end
 	end

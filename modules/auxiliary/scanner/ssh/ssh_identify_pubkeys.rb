@@ -159,7 +159,6 @@ class Metasploit3 < Msf::Auxiliary
 
 		if datastore['KEY_FILE'] and File.readable?(datastore['KEY_FILE'])
 			keys = read_keyfile(datastore['KEY_FILE'])
-			@keyfile_path = datastore['KEY_FILE'].dup
 			cleartext_keys = pull_cleartext_keys(keys)
 			msg = "#{ip}:#{rport} SSH - Trying #{cleartext_keys.size} cleartext key#{(cleartext_keys.size > 1) ? "s" : ""} per user."
 		elsif datastore['SSH_KEYFILE_B64'] && !datastore['SSH_KEYFILE_B64'].empty?
@@ -167,10 +166,9 @@ class Metasploit3 < Msf::Auxiliary
 			cleartext_keys = pull_cleartext_keys(keys)
 			msg = "#{ip}:#{rport} SSH - Trying #{cleartext_keys.size} cleartext key#{(cleartext_keys.size > 1) ? "s" : ""} per user (read from datastore)."
 		elsif datastore['KEY_DIR']
-			@keyfile_path = datastore['KEY_DIR'].dup
 			return :missing_keyfile unless(File.directory?(key_dir) && File.readable?(key_dir))
 			unless @key_files
-				@key_files = Dir.entries(key_dir).reject {|f| f =~ /^\x2e/ || f =~ /\x2epub$/}
+				@key_files = Dir.entries(key_dir).reject {|f| f =~ /^\x2e/}
 			end
 			these_keys = @key_files.map {|f| File.join(key_dir,f)}
 			keys = read_keyfile(these_keys)
@@ -252,58 +250,43 @@ class Metasploit3 < Msf::Auxiliary
 
 	def do_report(ip, port, user, key, key_data)
 		return unless framework.db.active
-		store_keyfile_b64_loot(ip,user,key[:fingerprint])
+		keyfile_path = store_keyfile(ip,user,key[:fingerprint],key_data)
 		cred_hash = {
 			:host => ip,
 			:port => rport,
 			:sname => 'ssh',
 			:user => user,
-			:pass => @keyfile_path,
+			:pass => keyfile_path,
 			:source_type => "user_supplied",
 			:type => 'ssh_pubkey',
 			:proof => "KEY=#{key[:fingerprint]}",
 			:duplicate_ok => true,
-			:active => true
+				:active => true
 		}
 		this_cred = report_auth_info(cred_hash)
 	end
 
-	# Checks if any existing privkeys matches the named key's
-	# key id. If so, assign that other key's cred.id to this
-	# one's proof section, and vice-versa.
-	def cross_check_privkeys(key_id)
-		return unless framework.db.active
-		other_cred = nil
-		framework.db.creds.each do |cred|
-			next unless cred.ptype == "ssh_key"
-			next unless cred.proof =~ /#{key_id}/
-				other_cred = cred
-			break
-		end
-		return other_cred
+	def existing_loot(ltype, key_id)
+		framework.db.loots(myworkspace).find_all_by_ltype(ltype).select {|l| l.info == key_id}.first
 	end
 
-	# Sometimes all we have is a SSH_KEYFILE_B64 string. If it's
-	# good, then store it as loot for this user@host, unless we
-	# already have it in loot.
-	def store_keyfile_b64_loot(ip,user,key_id)
-		return unless db
-		return if @keyfile_path
-		return if datastore["SSH_KEYFILE_B64"].to_s.empty?
-		keyfile = datastore["SSH_KEYFILE_B64"].unpack("m*").first
-		keyfile = keyfile.strip + "\n"
-		ktype_match = keyfile.match(/ssh-(rsa|dss)/)
-		return unless ktype_match
-		ktype = ktype_match[1].downcase
-		ktype = "dsa" if ktype == "dss" # Seems sensible to recast it
+	def store_keyfile(ip,user,key_id,key_data)
+		safe_username = user.gsub(/[^A-Za-z0-9]/,"_")
+		ktype = key_data.match(/ssh-(rsa|dss)/)[1] rescue nil
+		return unless ktype
+		ktype = "dsa" if ktype == "dss"
 		ltype = "host.unix.ssh.#{user}_#{ktype}_public"
-		# Assignment and comparison here, watch out!
-		if loot = Msf::DBManager::Loot.find_by_ltype_and_workspace_id(ltype,myworkspace.id)
-			if loot.info.include? key_id
-				@keyfile_path = loot.path
-			end
-		end
-		@keyfile_path ||= store_loot(ltype, "application/octet-stream", ip, keyfile.strip, nil, key_id)
+		keyfile = existing_loot(ltype, key_id)
+		return keyfile.path if keyfile
+		keyfile_path = store_loot(
+			ltype,
+			"application/octet-stream", # Text, but always want to mime-type attach it
+			ip, 
+			(key_data + "\n"),
+			"#{safe_username}_#{ktype}.pub",
+			key_id
+		)
+		return keyfile_path
 	end
 
 	def run_host(ip) 

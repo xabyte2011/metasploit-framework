@@ -60,6 +60,7 @@ class Metasploit3 < Msf::Auxiliary
 	def run_host(ip)
 		print_status("#{ip}:#{rport} - Starting FTP login sweep")
 		if check_banner
+			# This runs check_anonymous --
 			if datastore['RECORD_GUEST'] == false and check_anonymous == :next_user
 				@accepts_all_logins[@access] ||= []
 				@accepts_all_logins[@access] << ip
@@ -112,9 +113,15 @@ class Metasploit3 < Msf::Auxiliary
 		browser_passwords['IE8'] = "User@"
 		browser_passwords['Firefox'] = 'mozilla@example.com'
 		browser_passwords['Chrome'] = 'chrome@example.com'
-		unless @@credentials_tried.keys.include? "#{rhost}:#{rport}:anonymous"
+
+		# The lines below are commented in order to prevent the @@credentials_tried 
+		# variable from being accessed, which will hit the exception detailed in #6256.
+		# This class-level variable isn't created until each_user_pass is called above
+		# on line 69. 
+
+		#unless @@credentials_tried.keys.include? "#{rhost}:#{rport}:anonymous"
 			do_login("anonymous",browser_passwords.values[rand(browser_passwords.size)])
-		end
+		#end
 	end
 
 	def check_banner

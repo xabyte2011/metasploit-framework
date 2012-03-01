@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: brute_dirs.rb 11796 2011-02-22 20:49:44Z jduck $
 ##
 
 ##
@@ -16,7 +16,7 @@ require 'enumerable'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanDir
+	include Msf::Auxiliary::WmapScanDir
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
 
@@ -30,12 +30,12 @@ class Metasploit3 < Msf::Auxiliary
 			},
 			'Author' 		=> [ 'et' ],
 			'License'		=> BSD_LICENSE,
-			'Version'		=> '$Revision$'))
+			'Version'		=> '$Revision: 11796 $'))
 
 		register_options(
 			[
 				OptString.new('PATH', [ true,  "The path to identify directories", '/']),
-				OptString.new('FORMAT', [ true,  "The expected directory format (a alpha, d digit, A upperalpha)", 'aaa'])
+				OptString.new('FORMAT', [ true,  "The expected directory format (a alpha, d digit, A upperalpha)", 'a,aa,aaa'])
 			], self.class)
 
 		register_advanced_options(
@@ -71,7 +71,7 @@ class Metasploit3 < Msf::Auxiliary
 
 		# You may add multiple formats in the array
 		forma = []
-		forma << datastore['FORMAT']
+		forma = datastore['FORMAT'].split(',')
 
 		ecode = datastore['ErrorCode'].to_i
 		extens.each do |exte|
@@ -171,14 +171,21 @@ class Metasploit3 < Msf::Auxiliary
 							else
 								print_status("Found #{wmap_base_url}#{teststr} #{res.code.to_i}")
 
-								report_note(
+								report_web_vuln(
 									:host	=> ip,
-									:proto => 'tcp',
-									:sname => (ssl ? "https" : "http"),
 									:port	=> rport,
-									:type	=> 'DIRECTORY',
-									:data	=> "#{teststr}"
-								)
+									:vhost  => vhost,
+									:ssl    => ssl,
+									:path	=> "#{teststr}",
+									:method => 'GET',
+									:pname  => "",
+									:proof  => "Res code: #{res.code.to_s}",
+									:risk   => 0,
+									:confidence   => 100,
+									:category     => 'directory',
+									:description  => 'Directory found.',
+									:name   => 'directory'
+									)
 
 							end
 						end

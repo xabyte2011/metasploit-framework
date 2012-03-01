@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: web_vulndb.rb 11796 2011-02-22 20:49:44Z jduck $
 ##
 
 ##
@@ -15,7 +15,7 @@ require 'msf/core'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanServer
+	include Msf::Auxiliary::WmapScanServer
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
 
@@ -27,7 +27,7 @@ class Metasploit3 < Msf::Auxiliary
 			},
 			'Author' 		=> [ 'et' ],
 			'License'		=> BSD_LICENSE,
-			'Version'		=> '$Revision$'))
+			'Version'		=> '$Revision: 11796 $'))
 
 		register_options(
 			[
@@ -47,6 +47,11 @@ class Metasploit3 < Msf::Auxiliary
 				OptInt.new('TestThreads', [ true, "Number of test threads", 25])
 			], self.class)
 
+	end
+	
+	# Modify to true if you have sqlmap installed.
+	def wmap_enabled
+		false
 	end
 
 	def run_host(ip)
@@ -152,7 +157,7 @@ class Metasploit3 < Msf::Auxiliary
 								report_note(
 									:host	=> ip,
 									:proto => 'tcp',
-									:sname => (ssl ? "https" : "http"),
+									:sname => (ssl ? 'https' : 'http'),
 									:port	=> rport,
 									:type	=> 'FILE',
 									:data	=> "#{tpath}#{testfvuln} Code: #{res.code}"
@@ -166,7 +171,7 @@ class Metasploit3 < Msf::Auxiliary
 							report_note(
 									:host	=> ip,
 									:proto => 'tcp',
-									:sname => (ssl ? "https" : "http"),
+									:sname => (ssl ? 'https' : 'http'),
 									:port	=> rport,
 									:type	=> 'FILE',
 									:data	=> "#{tpath}#{testfvuln} Code: #{res.code}"

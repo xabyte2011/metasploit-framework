@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: files_dir.rb 14288 2011-11-20 02:15:04Z rapid7 $
 ##
 
 ##
@@ -16,7 +16,7 @@ require 'msf/core'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanDir
+	include Msf::Auxiliary::WmapScanDir
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
 
@@ -29,7 +29,7 @@ class Metasploit3 < Msf::Auxiliary
 			},
 			'Author' 		=> [ 'et' ],
 			'License'		=> BSD_LICENSE,
-			'Version'		=> '$Revision$'))
+			'Version'		=> '$Revision: 14288 $'))
 
 		register_options(
 			[
@@ -67,6 +67,7 @@ class Metasploit3 < Msf::Auxiliary
 			'.exe',
 			'.html',
 			'.htm',
+			'.ini',
 			'.log',
 			'.old',
 			'.orig',
@@ -172,14 +173,20 @@ class Metasploit3 < Msf::Auxiliary
 							else
 								print_status("Found #{wmap_base_url}#{tpath}#{testfext} #{res.code.to_i}")
 
-								report_note(
+								report_web_vuln(
 									:host	=> ip,
-									:proto => 'tcp',
-									:sname	=> (ssl ? 'https' : 'http'),
 									:port	=> rport,
-									:type	=> 'FILE',
-									:data	=> "#{tpath}#{testfext} Code: #{res.code}",
-									:update => :unique_data
+									:vhost  => vhost,
+									:ssl    => ssl,
+									:path	=> "#{tpath}#{testfext}",
+									:method => 'GET',
+									:pname  => "",
+									:proof  => "Res code: #{res.code.to_s}",
+									:risk   => 0,
+									:confidence   => 100,
+									:category     => 'file',
+									:description  => 'File found.',
+									:name   => 'file'
 								)
 
 							end

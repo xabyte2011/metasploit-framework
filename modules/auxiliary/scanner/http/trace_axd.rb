@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: trace_axd.rb 11796 2011-02-22 20:49:44Z jduck $
 ##
 
 ##
@@ -15,7 +15,7 @@ class Metasploit3 < Msf::Auxiliary
 
 	# Exploit mixins should be called first
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanDir
+	include Msf::Auxiliary::WmapScanDir
 	# Scanner mixin should be near last
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
@@ -23,7 +23,7 @@ class Metasploit3 < Msf::Auxiliary
 	def initialize
 		super(
 			'Name'        => 'HTTP trace.axd Content Scanner',
-			'Version'     => '$Revision$',
+			'Version'     => '$Revision: 11796 $',
 			'Description' => 'Detect trace.axd files and analize its content',
 			'Author'       => ['c4an'],
 			'License'     => MSF_LICENSE
@@ -63,10 +63,11 @@ class Metasploit3 < Msf::Auxiliary
 				report_note(
 						:host	=> target_host,
 						:proto => 'tcp',
-						:sname => (ssl ? "https" : "http"),
+						:sname => (ssl ? 'https' : 'http'),
 						:port	=> rport,
 						:type	=> 'TRACE_AXD',
-						:data	=> "trace.axd"
+						:data	=> "#{tpath}trace.axd",
+						:update => :unique_data
 					)
 
 				if datastore['TRACE_DETAILS']

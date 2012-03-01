@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: options.rb 12623 2011-05-15 22:19:00Z todb $
 ##
 
 ##
@@ -15,7 +15,7 @@ class Metasploit3 < Msf::Auxiliary
 
 	# Exploit mixins should be called first
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanServer
+	include Msf::Auxiliary::WmapScanServer
 	# Scanner mixin should be near last
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
@@ -23,7 +23,7 @@ class Metasploit3 < Msf::Auxiliary
 	def initialize
 		super(
 			'Name'        => 'HTTP Options Detection',
-			'Version'     => '$Revision$',
+			'Version'     => '$Revision: 12623 $',
 			'Description' => 'Display available HTTP options for each system',
 			'Author'       => ['CG'],
 			'License'     => MSF_LICENSE,
@@ -54,7 +54,7 @@ class Metasploit3 < Msf::Auxiliary
 				report_note(
 					:host	=> target_host,
 					:proto => 'tcp',
-					:sname	=> (ssl ? "https" : "http"),
+					:sname => (ssl ? 'https' : 'http'),
 					:port	=> rport,
 					:type	=> 'HTTP_OPTIONS',
 					:data	=> res.headers['Allow']
@@ -66,7 +66,7 @@ class Metasploit3 < Msf::Auxiliary
 						:host	=> target_host,
 						:port	=> rport,
 						:proto => 'tcp',
-						:sname	=> (ssl ? "https" : "http"),
+						:sname => (ssl ? 'https' : 'http'),
 						:name	=> self.fullname,
 						:info	=> res.headers['Allow'],
 						:refs   => self.references,

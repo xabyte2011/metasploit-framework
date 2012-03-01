@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: replace_ext.rb 11796 2011-02-22 20:49:44Z jduck $
 ##
 
 ##
@@ -18,7 +18,7 @@ require 'pathname'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanFile
+	include Msf::Auxiliary::WmapScanFile
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
 
@@ -32,7 +32,7 @@ class Metasploit3 < Msf::Auxiliary
 			},
 			'Author' 		=> [ 'et [at] cyberspace.org' ],
 			'License'		=> BSD_LICENSE,
-			'Version'		=> '$Revision$'))
+			'Version'		=> '$Revision: 11796 $'))
 
 		register_options(
 			[
@@ -64,13 +64,16 @@ class Metasploit3 < Msf::Auxiliary
 			'.tmp',
 			'.old',
 			'.htm',
+			'.ini',
+			'.cfg',
 			'.html',
 			'.php',
 			'.temp',
 			'.tmp',
 			'.java',
 			'.doc',
-			'.log'
+			'.log',
+			'.xml'
 		]
 
 
@@ -158,13 +161,20 @@ class Metasploit3 < Msf::Auxiliary
 					else
 						print_status("Found #{wmap_base_url}#{tpath}")
 
-						report_note(
+						report_web_vuln(
 							:host	=> ip,
-							:proto => 'tcp',
-							:sname	=> (ssl ? "https" : "http"),
 							:port	=> rport,
-							:type	=> 'FILE',
-							:data	=> "#{tpath} Code: #{res.code}"
+							:vhost  => vhost,
+							:ssl    => ssl,
+							:path	=> "#{tpath}",
+							:method => 'GET',
+							:pname  => "",
+							:proof  => "Res code: #{res.code.to_s}",
+							:risk   => 0,
+							:confidence   => 100,
+							:category     => 'file',
+							:description  => 'File found.',
+							:name   => 'file'
 						)
 
 					end

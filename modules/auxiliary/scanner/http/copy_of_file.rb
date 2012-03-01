@@ -1,5 +1,5 @@
 ##
-# $Id$
+# $Id: copy_of_file.rb 11796 2011-02-22 20:49:44Z jduck $
 ##
 
 ##
@@ -17,7 +17,7 @@ require 'msf/core'
 class Metasploit3 < Msf::Auxiliary
 
 	include Msf::Exploit::Remote::HttpClient
-	include Msf::Auxiliary::WMAPScanFile
+	include Msf::Auxiliary::WmapScanFile
 	include Msf::Auxiliary::Scanner
 	include Msf::Auxiliary::Report
 
@@ -30,7 +30,7 @@ class Metasploit3 < Msf::Auxiliary
 			},
 			'Author' 		=> [ 'et [at] cyberspace.org' ],
 			'License'		=> BSD_LICENSE,
-			'Version'		=> '$Revision$'))
+			'Version'		=> '$Revision: 11796 $'))
 
 		register_options(
 			[
@@ -143,13 +143,20 @@ class Metasploit3 < Msf::Auxiliary
 						else
 							print_status("[#{wmap_target_host}] Found #{wmap_base_url}#{filec} [#{res.code.to_i}]")
 
-							report_note(
+							report_web_vuln(
 								:host	=> ip,
-								:proto => 'tcp',
-								:sname => (ssl ? "https" : "http"),
 								:port	=> rport,
-								:type	=> 'COPY_FILE',
-								:data	=> "#{filec}"
+								:vhost  => vhost,
+								:ssl    => ssl,
+								:path	=> "#{filec}",
+								:method => 'GET',
+								:pname  => "",
+								:proof  => "Res code: #{res.code.to_s}",
+								:risk   => 0,
+								:confidence   => 100,
+								:category     => 'file',
+								:description  => 'Copy file found.',
+								:name   => 'copy of file'
 							)
 						end
 					end

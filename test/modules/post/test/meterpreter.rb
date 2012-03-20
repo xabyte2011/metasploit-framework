@@ -13,7 +13,13 @@ class Metasploit4 < Msf::Post
 	def initialize(info={})
 		super( update_info( info,
 				'Name'          => 'Testing meterpreter stuff',
-				'Description'   => %q{ This module will test meterpreter API methods },
+				'Description'   => %q{
+					This module will test meterpreter API methods.
+
+					ASSUMPTIONS:
+						- the server has write permissions to its current
+						working directory.
+				},
 				'License'       => MSF_LICENSE,
 				'Author'        => [ 'egypt'],
 				'Version'       => '$Revision$',
@@ -108,7 +114,9 @@ class Metasploit4 < Msf::Post
 		end
 
 		it "should change directories" do
-			res = create_directory("meterpreter-test")
+			# if the previous test failed to clean up don't count it against
+			# this one. Assume if we can't make it, it already exists
+			res = create_directory("meterpreter-test") rescue true
 
 			old_wd = session.fs.dir.pwd
 			vprint_status("Old CWD: #{old_wd}")

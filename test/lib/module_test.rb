@@ -33,6 +33,7 @@ module ModuleTest
 		rescue ::Exception => e
 			print_error("FAILED: #{msg}")
 			print_error("Exception: #{e.class} : #{e}")
+			@failures  += 1
 			return
 		end
 

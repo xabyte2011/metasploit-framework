@@ -160,11 +160,13 @@ module ReverseTcp
 		self.handler_thread = framework.threads.spawn("ReverseTcpHandlerWorker-#{datastore['LPORT']}", false) {
 			while true
 				client = self.handler_queue.pop
-				begin
-					handle_connection(client)
-				rescue ::Exception
-					elog("Exception raised from handle_connection: #{$!.class}: #{$!}\n\n#{$@.join("\n")}")
-				end
+				framework.threads.spawn("ReverseTcpHandlerWorker-#{datastore['LPORT']}-Processor", false, client) { |cli|
+					begin
+						handle_connection(cli)
+					rescue ::Exception
+						elog("Exception raised from handle_connection: #{$!.class}: #{$!}\n\n#{$@.join("\n")}")
+					end
+				}
 			end
 		}
 
